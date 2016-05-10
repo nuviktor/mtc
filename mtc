@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# a bit hacky, needs to be improved
+clear_custom_prerouting_ipt_rules() {
+  while iptables -t mangle -D PREROUTING 2 2>/dev/null; do :; done
+}
+
+case "$1" in
+  init)
+    for dev in wlan0 wlan1; do
+      tc qdisc add dev "$dev" root handle 1: htb default 12
+      tc class add dev "$dev" parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
+      tc class add dev "$dev" parent 1:1 classid 1:10 htb rate 211kbps ceil 211kbps
+      tc class add dev "$dev" parent 1:1 classid 1:11 htb rate 100mbit ceil 100mbit
+    done
+
+    tc qdisc add dev eth0 root handle 1: htb default 12
+    tc class add dev eth0 parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
+    tc class add dev eth0 parent 1:1 classid 1:10 htb rate 23kbps ceil 23kbps
+    tc class add dev eth0 parent 1:1 classid 1:11 htb rate 100mbit ceil 100mbit
+
+    # set up filter to send marked packets to the slow upload flow
+    tc filter add dev eth0 protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
+  ;;
+
+  clear)
+    for dev in wlan0 wlan1; do
+      tc filter del dev "$dev" prio 1
+    done
+
+    clear_custom_prerouting_ipt_rules
+  ;;
+
+  halt|kill|terminate)
+    for dev in wlan0 wlan1 eth0; do
+      tc qdisc del dev "$dev" root 
+    done
+
+    clear_custom_prerouting_ipt_rules
+  ;;
+
+  *)
+    for dev in wlan0 wlan1; do
+      tc filter add dev "$dev" protocol ip parent 1:0 prio 1 u32 match ip dst "$1" flowid 1:10
+    done
+
+    iptables -t mangle -A PREROUTING -j MARK -s "$1/32" --set-mark 6
+  ;;
+esac
