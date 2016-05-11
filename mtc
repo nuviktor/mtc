@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# a bit hacky, needs to be improved
+# A bit hacky, needs to be improved
 clear_custom_ipt_rules() {
   while iptables -t mangle -D PREROUTING 2 2>/dev/null; do :; done
 }
 
 case "$1" in
   init)
-    # limits in KB/s
+    # Limits in KB/s
     download_limit=211
     upload_limit=23
 

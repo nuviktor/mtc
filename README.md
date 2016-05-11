@@ -8,3 +8,4 @@ Todo
 
 - Improve the hacky iptables handling. Look into connmark as suggested by #netfilter.
 - Explain reasoning and add network diagram.
+- Add dependency installation script for OpenWRT
