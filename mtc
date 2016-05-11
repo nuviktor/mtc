@@ -8,8 +8,8 @@ clear_custom_ipt_rules() {
 case "$1" in
   init)
     # Limits in KB/s
-    download_limit=211
-    upload_limit=23
+    download_limit=347
+    upload_limit=59
 
     for dev in wlan0 wlan1; do
       tc qdisc add dev "$dev" root handle 1: htb default 12
@@ -44,7 +44,7 @@ case "$1" in
   ;;
 
   help)
-    echo "Usage: mtc COMMAND|ipv4_address"
+    echo "Usage: mtc COMMAND|IPV4-ADDRESS"
     echo
     echo "Commands:"
     echo "  init - initialise setup, adding qdiscs and iptables rules, to be ran before adding IPv4 address filters"
