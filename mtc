@@ -43,7 +43,17 @@ case "$1" in
     clear_custom_ipt_rules
   ;;
 
-  *)
+  help)
+    echo "Usage: mtc COMMAND|ipv4_address"
+    echo
+    echo "Commands:"
+    echo "  init - initialise setup, adding qdiscs and iptables rules, to be ran before adding IPv4 address filters"
+    echo "  clear - wipe the IPv4 addresses being throttled"
+    echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules"
+    echo "  help - display this help snippet"
+  ;;
+
+  *) # Assumes argument is an IPv4 address
     for dev in wlan0 wlan1; do
       tc filter add dev "$dev" protocol ip parent 1:0 prio 1 u32 match ip dst "$1" flowid 1:10
     done
