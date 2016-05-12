@@ -27,7 +27,7 @@ case "$1" in
     tc class add dev eth0 parent 1:1 classid 1:10 htb rate "${upload_limit}kbps" ceil "${upload_limit}kbps"
     tc class add dev eth0 parent 1:1 classid 1:11 htb rate 100mbit ceil 100mbit
 
-    # set up filter to send marked packets to the slow upload flow
+    # Set up filter to send marked packets to the slow upload flow
     tc filter add dev eth0 protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
   ;;
 
