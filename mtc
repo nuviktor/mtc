@@ -5,6 +5,12 @@ if ! command -v tc >/dev/null 2>&1; then
   exit 1
 fi
 
+setup_ipt_mark_rules() {
+  iptables -t mangle -A fwmark -j CONNMARK --restore-mark
+  iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
+  iptables -t mangle -A fwmark -j CONNMARK --save-mark
+}
+
 clear_custom_ipt_rules() {
   iptables -t mangle -F fwmark
 }
@@ -30,9 +36,7 @@ case "$1" in
     # Set up filter to send marked packets to the slow upload flow
     tc filter add dev eth0 protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
 
-    iptables -t mangle -A fwmark -j CONNMARK --restore-mark
-    iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
-    iptables -t mangle -A fwmark -j CONNMARK --save-mark
+    setup_ipt_mark_rules
   ;;
 
   clear)
@@ -41,6 +45,7 @@ case "$1" in
     done
 
     clear_custom_ipt_rules
+    setup_ipt_mark_rules
   ;;
 
   halt|kill)
