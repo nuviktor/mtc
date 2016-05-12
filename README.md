@@ -16,4 +16,3 @@ Todo
 
 - Look into using connmark on OpenWRT.
 - Explain reasoning and add network diagram.
-- Add dependency installation script for OpenWRT
