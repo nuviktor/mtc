@@ -12,6 +12,7 @@ Dependencies
 
 - tc
 - kmod-sched (for HTB qdisc)
+- iptables-mod-conntrack-extra (for connmarking)
 
 Todo
 ----
