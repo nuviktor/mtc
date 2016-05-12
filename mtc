@@ -51,7 +51,7 @@ case "$1" in
     echo "Usage: mtc COMMAND|IPV4-ADDRESS"
     echo
     echo "Commands:"
-    echo "  init - initialise setup, adding qdiscs and iptables rules, to be ran before adding IPv4 address filters"
+    echo "  init - initialise setup, adding qdiscs and upload filter, to be ran before adding IPv4 address filters"
     echo "  clear - wipe the IPv4 addresses being throttled"
     echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules"
     echo "  help - display this help snippet"
