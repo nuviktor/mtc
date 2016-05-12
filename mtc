@@ -12,8 +12,8 @@ clear_custom_ipt_rules() {
 case "$1" in
   init)
     # Limits in KB/s
-    download_limit=347
-    upload_limit=59
+    download_limit="${MTC_DL_LIMIT:-347}"
+    upload_limit="${MTC_UL_LIMIT:-59}"
 
     for dev in wlan0 wlan1; do
       tc qdisc add dev "$dev" root handle 1: htb default 12
@@ -51,7 +51,9 @@ case "$1" in
     echo "Usage: mtc COMMAND|IPV4-ADDRESS"
     echo
     echo "Commands:"
-    echo "  init      - initialise setup, adding qdiscs and upload filter, to be ran before adding IPv4 address filters"
+    echo "  init      - initialise setup, adding qdiscs and upload filter, to be ran before adding IPv4 address filters."
+    echo "              Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of"
+    echo "              the default limits."
     echo "  clear     - wipe the IPv4 addresses being throttled"
     echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules"
     echo "  help      - display this help snippet"
