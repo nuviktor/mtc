@@ -3,9 +3,11 @@ My Traffic Control
 
 A really simple experiment to handle traffic on my slow home network to avoid issues when playing real-time Internet games.
 
+To be used on OpenWRT.
+
 Todo
 ----
 
-- Improve the hacky iptables handling. Look into connmark as suggested by #netfilter.
+- Look into using connmark on OpenWRT.
 - Explain reasoning and add network diagram.
 - Add dependency installation script for OpenWRT

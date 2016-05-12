@@ -1,8 +1,7 @@
 #!/bin/sh
 
-# A bit hacky, needs to be improved
 clear_custom_ipt_rules() {
-  while iptables -t mangle -D PREROUTING 2 2>/dev/null; do :; done
+  iptables -t mangle -F fwmark
 }
 
 case "$1" in
@@ -58,6 +57,6 @@ case "$1" in
       tc filter add dev "$dev" protocol ip parent 1:0 prio 1 u32 match ip dst "$1" flowid 1:10
     done
 
-    iptables -t mangle -A PREROUTING -j MARK -s "$1/32" --set-mark 6
+    iptables -t mangle -A fwmark -j MARK -s "$1/32" --set-mark 6
   ;;
 esac
