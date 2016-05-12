@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if ! command -v foo >/dev/null 2>&1; then
+if ! command -v tc >/dev/null 2>&1; then
   echo "tc not installed" >&2
   exit 1
 fi
@@ -29,6 +29,10 @@ case "$1" in
 
     # Set up filter to send marked packets to the slow upload flow
     tc filter add dev eth0 protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
+
+    iptables -t mangle -A fwmark -j CONNMARK --restore-mark
+    iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
+    iptables -t mangle -A fwmark -j CONNMARK --save-mark
   ;;
 
   clear)
@@ -64,6 +68,7 @@ case "$1" in
       tc filter add dev "$dev" protocol ip parent 1:0 prio 1 u32 match ip dst "$1" flowid 1:10
     done
 
-    iptables -t mangle -A fwmark -j MARK -s "$1/32" --set-mark 6
+    # Assumes that this script is the only thing editing the fwmark chain
+    iptables -t mangle -I fwmark 3 -j MARK -s "$1/32" --set-mark 6
   ;;
 esac
