@@ -5,6 +5,12 @@ A really simple experiment to handle traffic on my slow home network to avoid is
 
 To be used on OpenWRT.
 
+Dependencies
+------------
+
+- tc
+- kmod-sched (for HTB qdisc)
+
 Todo
 ----
 

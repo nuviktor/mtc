@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if ! hash tc 2>/dev/null; then
+  echo "tc not installed"
+  exit 1
+fi
+
 clear_custom_ipt_rules() {
   iptables -t mangle -F fwmark
 }
