@@ -11,11 +11,11 @@ Dependencies
 ------------
 
 - tc
+- ipset
 - kmod-sched (for HTB qdisc)
 - iptables-mod-conntrack-extra (for connmarking)
 
 Todo
 ----
 
-- Look into using connmark on OpenWRT.
 - Explain reasoning and add network diagram.
