@@ -62,12 +62,12 @@ case "$1" in
     echo "Usage: mtc COMMAND|IPV4-ADDRESS"
     echo
     echo "Commands:"
-    echo "  init      - initialise setup, adding qdiscs and upload filter, to be ran before adding IPv4 address filters."
-    echo "              Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of"
-    echo "              the default limits."
-    echo "  clear     - wipe the IPv4 addresses being throttled"
-    echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules"
-    echo "  help      - display this help snippet"
+    echo "  init      - initialise setup, adding qdiscs, iptables rules, etc.; to be ran before adding IPv4 address filters."
+    echo "              Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of the"
+    echo "              default limits."
+    echo "  clear     - wipe the IPv4 addresses being throttled."
+    echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules."
+    echo "  help      - display this help snippet."
   ;;
 
   *) # Assumes argument is an IPv4 address
