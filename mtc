@@ -1,19 +1,14 @@
 #!/bin/sh
 
-if ! command -v tc >/dev/null 2>&1; then
-  echo "tc not installed" >&2
-  exit 1
-fi
-
-setup_ipt_mark_rules() {
-  iptables -t mangle -A fwmark -j CONNMARK --restore-mark
-  iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
-  iptables -t mangle -A fwmark -j CONNMARK --save-mark
+check_if_installed() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "$1 not installed" >&2
+    exit 1
+  fi
 }
 
-clear_custom_ipt_rules() {
-  iptables -t mangle -F fwmark
-}
+check_if_installed tc
+check_if_installed ipset
 
 case "$1" in
   init)
@@ -33,19 +28,22 @@ case "$1" in
     tc class add dev eth0 parent 1:1 classid 1:10 htb rate "${upload_limit}kbps" ceil "${upload_limit}kbps"
     tc class add dev eth0 parent 1:1 classid 1:11 htb rate 100mbit ceil 100mbit
 
-    # Set up filter to send marked packets to the slow upload flow
-    tc filter add dev eth0 protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
-
-    setup_ipt_mark_rules
-  ;;
-
-  clear)
-    for dev in wlan0 wlan1; do
-      tc filter del dev "$dev" prio 1
+    # Set up filters to send marked packets to the slow flow
+    for dev in wlan0 wlan1 eth0; do
+      tc filter add dev "$dev" protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
     done
 
-    clear_custom_ipt_rules
-    setup_ipt_mark_rules
+    ipset new mtc hash:ip
+
+    iptables -t mangle -A fwmark -j CONNMARK --restore-mark
+    iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
+    iptables -t mangle -A fwmark -m set --match-set mtc src -j MARK --set-mark 6
+
+    iptables -t mangle -A POSTROUTING -j CONNMARK --save-mark
+  ;;
+
+  clear|flush)
+    ipset flush mtc
   ;;
 
   halt|kill)
@@ -53,7 +51,11 @@ case "$1" in
       tc qdisc del dev "$dev" root 
     done
 
-    clear_custom_ipt_rules
+    # Assumes my script will be the only thing editing these chains
+    iptables -t mangle -F fwmark
+    iptables -t mangle -F POSTROUTING
+
+    ipset destroy mtc
   ;;
 
   help)
@@ -69,11 +71,6 @@ case "$1" in
   ;;
 
   *) # Assumes argument is an IPv4 address
-    for dev in wlan0 wlan1; do
-      tc filter add dev "$dev" protocol ip parent 1:0 prio 1 u32 match ip dst "$1" flowid 1:10
-    done
-
-    # Assumes that this script is the only thing editing the fwmark chain
-    iptables -t mangle -I fwmark 3 -j MARK -s "$1/32" --set-mark 6
+    ipset add mtc "$1"
   ;;
 esac
