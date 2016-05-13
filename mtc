@@ -10,11 +10,18 @@ check_if_installed() {
 check_if_installed tc
 check_if_installed ipset
 
+mark_value=6
+
 case "$1" in
   init)
     # Limits in KB/s
     download_limit="${MTC_DL_LIMIT:-347}"
     upload_limit="${MTC_UL_LIMIT:-59}"
+
+    echo "MTC initialising"
+    echo
+    echo "Download limit: $download_limit KB/s"
+    echo "Upload limit: $upload_limit KB/s"
 
     # Set up all interfaces with an HTB qdisc with a fast lane and an SFQ child qdisc
     for dev in wlan0 wlan1 eth0; do
@@ -41,7 +48,7 @@ case "$1" in
 
     # Set up filters to send marked packets to the slow lane
     for dev in wlan0 wlan1 eth0; do
-      tc filter add dev "$dev" protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
+      tc filter add dev "$dev" protocol ip parent 1: prio 1 handle "$mark_value" fw flowid 1:10
     done
 
     # Finally create an ipset for holding a list of IP addresses and the appropriate iptables rules
@@ -49,7 +56,7 @@ case "$1" in
 
     iptables -t mangle -A fwmark -j CONNMARK --restore-mark
     iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
-    iptables -t mangle -A fwmark -m set --match-set mtc src -j MARK --set-mark 6
+    iptables -t mangle -A fwmark -m set --match-set mtc src -j MARK --set-mark "$mark_value"
 
     iptables -t mangle -A POSTROUTING -j CONNMARK --save-mark
   ;;
@@ -70,19 +77,29 @@ case "$1" in
     ipset destroy mtc
   ;;
 
+  count)
+    echo "Connections marked: $(grep -c mark="$mark_value" /proc/net/nf_conntrack)"
+  ;;
+
   help)
     echo "Usage: mtc COMMAND|IPV4-ADDRESS"
     echo
     echo "Commands:"
-    echo "  init      - initialise setup, adding qdiscs, iptables rules, etc.; to be ran before adding IPv4 address filters."
-    echo "              Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of the"
-    echo "              default limits."
-    echo "  clear     - wipe the IPv4 addresses being throttled."
-    echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules."
-    echo "  help      - display this help snippet."
+    echo "  init        - initialise setup, adding qdiscs, iptables rules, etc.; to be ran before adding IPv4 address filters."
+    echo "                Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of the"
+    echo "                default limits."
+    echo "  clear|flush - wipe the IPv4 addresses being throttled."
+    echo "  halt|kill   - deinitialise setup, removing all qdiscs and iptables rules."
+    echo "  count       - display a count of marked connections."
+    echo "  help        - display this help snippet."
   ;;
 
   *) # Assumes argument is an IPv4 address
+    if [ ! -n "$1" ]; then
+      echo "No arguments supplied."
+      exit 1
+    fi
+
     ipset add mtc "$1"
   ;;
 esac
