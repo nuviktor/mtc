@@ -1,13 +1,14 @@
 #!/bin/sh
 
-if ! command -v tc >/dev/null 2>&1; then
-  echo "tc not installed" >&2
-  exit 1
-fi
-
-clear_custom_ipt_rules() {
-  iptables -t mangle -F fwmark
+check_if_installed() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "$1 not installed" >&2
+    exit 1
+  fi
 }
+
+check_if_installed tc
+check_if_installed ipset
 
 case "$1" in
   init)
@@ -15,28 +16,46 @@ case "$1" in
     download_limit="${MTC_DL_LIMIT:-347}"
     upload_limit="${MTC_UL_LIMIT:-59}"
 
-    for dev in wlan0 wlan1; do
-      tc qdisc add dev "$dev" root handle 1: htb default 12
+    # Set up all interfaces with an HTB qdisc with a fast lane and an SFQ child qdisc
+    for dev in wlan0 wlan1 eth0; do
+      tc qdisc add dev "$dev" root handle 1: htb default 11
+
       tc class add dev "$dev" parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
-      tc class add dev "$dev" parent 1:1 classid 1:10 htb rate "${download_limit}kbps" ceil "${download_limit}kbps"
       tc class add dev "$dev" parent 1:1 classid 1:11 htb rate 100mbit ceil 100mbit
+
+      tc qdisc add dev "$dev" parent 1:11 handle 10: sfq perturb 10
     done
 
-    tc qdisc add dev eth0 root handle 1: htb default 12
-    tc class add dev eth0 parent 1: classid 1:1 htb rate 100mbit ceil 100mbit
-    tc class add dev eth0 parent 1:1 classid 1:10 htb rate "${upload_limit}kbps" ceil "${upload_limit}kbps"
-    tc class add dev eth0 parent 1:1 classid 1:11 htb rate 100mbit ceil 100mbit
+    # Add the slow lane for the wireless interfaces, where packets being downloaded will be sent
+    for dev in wlan0 wlan1; do
+      tc class add dev "$dev" parent 1:1 classid 1:10 htb rate "${download_limit}kbps" ceil "${download_limit}kbps" burst 20k
+    done
 
-    # Set up filter to send marked packets to the slow upload flow
-    tc filter add dev eth0 protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
+    # Add the same for the Internet-facing interface
+    tc class add dev eth0 parent 1:1 classid 1:10 htb rate "${upload_limit}kbps" ceil "${upload_limit}kbps"
+
+    # Add SFQ qdiscs as children to these slow lanes 
+    for dev in wlan0 wlan1 eth0; do
+      tc qdisc add dev "$dev" parent 1:10 handle 11: sfq perturb 10
+    done
+
+    # Set up filters to send marked packets to the slow lane
+    for dev in wlan0 wlan1 eth0; do
+      tc filter add dev "$dev" protocol ip parent 1: prio 1 handle 6 fw flowid 1:10
+    done
+
+    # Finally create an ipset for holding a list of IP addresses and the appropriate iptables rules
+    ipset new mtc bitmap:ip range 192.168.1.0/24
+
+    iptables -t mangle -A fwmark -j CONNMARK --restore-mark
+    iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
+    iptables -t mangle -A fwmark -m set --match-set mtc src -j MARK --set-mark 6
+
+    iptables -t mangle -A POSTROUTING -j CONNMARK --save-mark
   ;;
 
-  clear)
-    for dev in wlan0 wlan1; do
-      tc filter del dev "$dev" prio 1
-    done
-
-    clear_custom_ipt_rules
+  clear|flush)
+    ipset flush mtc
   ;;
 
   halt|kill)
@@ -44,26 +63,26 @@ case "$1" in
       tc qdisc del dev "$dev" root 
     done
 
-    clear_custom_ipt_rules
+    # Assumes my script will be the only thing editing these chains
+    iptables -t mangle -F fwmark
+    iptables -t mangle -F POSTROUTING
+
+    ipset destroy mtc
   ;;
 
   help)
     echo "Usage: mtc COMMAND|IPV4-ADDRESS"
     echo
     echo "Commands:"
-    echo "  init      - initialise setup, adding qdiscs and upload filter, to be ran before adding IPv4 address filters."
-    echo "              Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of"
-    echo "              the default limits."
-    echo "  clear     - wipe the IPv4 addresses being throttled"
-    echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules"
-    echo "  help      - display this help snippet"
+    echo "  init      - initialise setup, adding qdiscs, iptables rules, etc.; to be ran before adding IPv4 address filters."
+    echo "              Specifying the environment variables MTC_DL_LIMIT and MTC_UL_LIMIT in KB/s allows customisation of the"
+    echo "              default limits."
+    echo "  clear     - wipe the IPv4 addresses being throttled."
+    echo "  halt|kill - deinitialise setup, removing all qdiscs and iptables rules."
+    echo "  help      - display this help snippet."
   ;;
 
   *) # Assumes argument is an IPv4 address
-    for dev in wlan0 wlan1; do
-      tc filter add dev "$dev" protocol ip parent 1:0 prio 1 u32 match ip dst "$1" flowid 1:10
-    done
-
-    iptables -t mangle -A fwmark -j MARK -s "$1/32" --set-mark 6
+    ipset add mtc "$1"
   ;;
 esac
