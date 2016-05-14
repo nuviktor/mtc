@@ -7,6 +7,9 @@ check_if_installed() {
   fi
 }
 
+check_if_installed tc
+check_if_installed ipset
+
 mark_value=6
 network=192.168.1.0/24
 
