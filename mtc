@@ -54,10 +54,12 @@ case "$1" in
     # Finally create an ipset for holding a list of IP addresses and the appropriate iptables rules
     ipset new mtc bitmap:ip range 192.168.1.0/24
 
+    iptables -t mangle -F fwmark
     iptables -t mangle -A fwmark -j CONNMARK --restore-mark
     iptables -t mangle -A fwmark -m mark ! --mark 0 -j ACCEPT
     iptables -t mangle -A fwmark -m set --match-set mtc src -j MARK --set-mark "$mark_value"
 
+    iptables -t mangle -F POSTROUTING
     iptables -t mangle -A POSTROUTING -j CONNMARK --save-mark
   ;;
 
