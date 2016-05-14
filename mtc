@@ -62,13 +62,19 @@ case "$1" in
 
     iptables -t mangle -F POSTROUTING
     iptables -t mangle -A POSTROUTING -j CONNMARK --save-mark
+
+    echo
+    echo "MTC initialised"
   ;;
 
   clear|flush)
+    echo "Flushing list of IPs to be throttled"
     ipset flush mtc
   ;;
 
   halt|kill)
+    echo "MTC deinitialising"
+
     for dev in wlan0 wlan1 eth0; do
       tc qdisc del dev "$dev" root 
     done
@@ -78,6 +84,8 @@ case "$1" in
     iptables -t mangle -F POSTROUTING
 
     ipset destroy mtc
+
+    echo "MTC deinitialised"
   ;;
 
   count)
@@ -98,6 +106,8 @@ case "$1" in
       echo "Could not find an IP for supplied host." >&2
       exit 1
     fi
+
+    echo "Adding IP address $ip (resolved from host $2) to list"
 
     ipset add mtc "$ip"
   ;;
@@ -125,6 +135,8 @@ case "$1" in
       echo "No arguments supplied."
       exit 1
     fi
+
+    echo "Adding IP address $1 to list"
 
     ipset add mtc "$1"
   ;;
