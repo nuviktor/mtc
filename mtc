@@ -9,11 +9,7 @@ check_if_installed() {
 
 mtc_is_running() {
   # The existence of the mtc ipset strongly suggests mtc has been initialised
-  if ipset list mtc >/dev/null 2>&1; then
-    return 0
-  else
-    return 1
-  fi
+  ipset list mtc >/dev/null 2>&1
 }
 
 check_if_installed tc
