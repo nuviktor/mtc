@@ -7,17 +7,31 @@ check_if_installed() {
   fi
 }
 
+mtc_is_running() {
+  # The existence of the mtc ipset strongly suggests mtc has been initialised
+  if ipset list mtc >/dev/null 2>&1; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 check_if_installed tc
 check_if_installed ipset
 
 mark_value=6
-network=192.168.1.0/24
 
 case "$1" in
   init)
     # Limits in KB/s
     download_limit="${MTC_DL_LIMIT:-347}"
     upload_limit="${MTC_UL_LIMIT:-59}"
+    network=192.168.1.0/24
+
+    if mtc_is_running; then
+      echo "MTC already appears to be running" >&2
+      exit 1
+    fi
 
     echo "MTC initialising"
     echo
@@ -68,11 +82,21 @@ case "$1" in
   ;;
 
   clear|flush)
+    if ! mtc_is_running; then
+      echo "MTC doesn't appear to be running" >&2
+      exit 1
+    fi
+
     echo "Flushing list of IPs to be throttled"
     ipset flush mtc
   ;;
 
   halt|kill)
+    if ! mtc_is_running; then
+      echo "MTC already appears to be stopped" >&2
+      exit 1
+    fi
+
     echo "MTC deinitialising"
 
     for dev in wlan0 wlan1 eth0; do
@@ -93,6 +117,11 @@ case "$1" in
   ;;
 
   host)
+    if ! mtc_is_running; then
+      echo "MTC doesn't appear to be running" >&2
+      exit 1
+    fi
+
     check_if_installed dig
 
     if [ ! -n "$2" ]; then
@@ -113,7 +142,22 @@ case "$1" in
   ;;
 
   list)
-    ipset list mtc
+    if mtc_is_running; then
+      ipset list mtc
+    else
+      echo "MTC doesn't appear to be running" >&2
+      exit 1
+    fi
+  ;;
+
+  status)
+    if mtc_is_running; then
+      echo "MTC is running"
+      exit 0
+    else
+      echo "MTC isn't running" >&2
+      exit 1
+    fi
   ;;
 
   help)
@@ -133,6 +177,11 @@ case "$1" in
   *) # Assumes argument is an IPv4 address
     if [ ! -n "$1" ]; then
       echo "No arguments supplied."
+      exit 1
+    fi
+
+    if ! mtc_is_running; then
+      echo "MTC doesn't appear to be running" >&2
       exit 1
     fi
 
