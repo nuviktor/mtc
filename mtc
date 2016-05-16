@@ -49,7 +49,7 @@ case "$1" in
     # Add the same for the Internet-facing interface
     tc class add dev eth0 parent 1:1 classid 1:10 htb rate "${upload_limit}kbps" ceil "${upload_limit}kbps"
 
-    # Add SFQ qdiscs as children to these slow lanes 
+    # Add SFQ qdiscs as children to these slow lanes
     for dev in wlan0 wlan1 eth0; do
       tc qdisc add dev "$dev" parent 1:10 handle 11: sfq perturb 10
     done
@@ -72,7 +72,7 @@ case "$1" in
 
     echo
     echo "MTC initialised"
-  ;;
+  ;; # init
 
   clear|flush)
     if ! mtc_is_running; then
@@ -93,7 +93,7 @@ case "$1" in
     echo "MTC deinitialising"
 
     for dev in wlan0 wlan1 eth0; do
-      tc qdisc del dev "$dev" root 
+      tc qdisc del dev "$dev" root
     done
 
     # Assumes my script will be the only thing editing these chains
@@ -178,7 +178,6 @@ case "$1" in
     fi
 
     echo "Adding IP address $1 to list"
-
     ipset add mtc "$1"
   ;;
 esac
