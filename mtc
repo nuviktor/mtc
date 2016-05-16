@@ -135,18 +135,17 @@ case "$1" in
   ;;
 
   list)
-    if mtc_is_running; then
-      ipset list mtc
-    else
+    if ! mtc_is_running; then
       echo "MTC doesn't appear to be running" >&2
       exit 1
     fi
+
+    ipset list mtc
   ;;
 
   status)
     if mtc_is_running; then
       echo "MTC is running"
-      exit 0
     else
       echo "MTC isn't running" >&2
       exit 1
@@ -169,7 +168,7 @@ case "$1" in
 
   *) # Assumes argument is an IPv4 address
     if [ ! -n "$1" ]; then
-      echo "No arguments supplied."
+      echo "No arguments supplied." >&2
       exit 1
     fi
 
