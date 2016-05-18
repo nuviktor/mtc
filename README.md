@@ -14,3 +14,4 @@ Dependencies
 - ipset
 - kmod-sched (for HTB qdisc)
 - iptables-mod-conntrack-extra (for connmarking)
+- dig (for host lookup functionality)
