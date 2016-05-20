@@ -15,8 +15,3 @@ Dependencies
 - kmod-sched (for HTB qdisc)
 - iptables-mod-conntrack-extra (for connmarking)
 - dig (for host lookup functionality)
-
-Todo
-----
-
-- Add a utility script that can detect the IP generating the most traffic, with a whitelist of my own machine
