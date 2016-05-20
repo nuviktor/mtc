@@ -9,6 +9,11 @@ mtc_is_running() {
   ipset list mtc >/dev/null 2>&1
 }
 
+if (( $(id -u) != 0 )); then
+  echo "Must be ran as root" >&2
+  exit 1
+fi
+
 is_installed tc || { echo "tc not installed" >&2; exit 1; }
 is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
 
@@ -64,7 +69,7 @@ case "$1" in
     done
 
     # Finally create an ipset for holding a list of IP addresses and the appropriate iptables rules
-    ipset new mtc bitmap:ip range "$network"
+    ipset new mtc bitmap:ip range "$network" timeout 0
 
     iptables -t mangle -F fwmark
     iptables -t mangle -A fwmark -j CONNMARK --restore-mark
@@ -110,7 +115,7 @@ case "$1" in
   ;;
 
   count)
-    echo "Connections marked: $(grep -c mark="$mark_value" /proc/net/nf_conntrack)"
+    echo "Connections marked: $(grep -c "mark=$mark_value" /proc/net/nf_conntrack)"
   ;;
 
   host)
@@ -133,8 +138,13 @@ case "$1" in
       exit 1
     fi
 
-    echo "Adding IP address $ip (resolved from host $2) to list"
-    ipset add mtc "$ip"
+    if [ ! -n "$3" ]; then
+      echo "Adding IP address $ip (resolve from host $2) to list"
+      ipset add mtc "$ip"
+    else
+      echo "Adding IP address $ip (resolved from host $2) to list with timeout of $3 minutes"
+      ipset add mtc "$ip" timeout "$(( $3 * 60 ))"
+    fi
   ;;
 
   list)
@@ -156,7 +166,8 @@ case "$1" in
   ;;
 
   help)
-    echo "Usage: mtc COMMAND|IPV4-ADDRESS"
+    echo "Usage: mtc COMMAND [...]"
+    echo "       mtc IPV4-ADDRESS [TIMEOUT]"
     echo
     echo "Commands:"
     echo "  init        - initialise setup, adding qdiscs, iptables rules, etc.; to be ran before adding IPv4 address filters."
@@ -165,7 +176,8 @@ case "$1" in
     echo "  clear|flush - wipe the IPv4 addresses being throttled."
     echo "  halt|kill   - deinitialise setup, removing all qdiscs and iptables rules."
     echo "  count       - display a count of marked connections."
-    echo "  host HOST   - add an IP address to be throttled by hostname."
+    echo "  host HOST [TIMEOUT]"
+    echo "              - add an IP address to be throttled by hostname, an optional timeout (in minutes) can be specified."
     echo "  help        - display this help snippet."
   ;;
 
@@ -180,7 +192,12 @@ case "$1" in
       exit 1
     fi
 
-    echo "Adding IP address $1 to list"
-    ipset add mtc "$1"
+    if [ ! -n "$2" ]; then
+      echo "Adding IP address $1 to list"
+      ipset add mtc "$1"
+    else
+      echo "Adding IP address $1 to list with timeout of $2 minutes"
+      ipset add mtc "$1" timeout "$(( $2 * 60 ))"
+    fi
   ;;
 esac
