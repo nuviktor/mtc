@@ -127,14 +127,14 @@ case "$1" in
     fi
 
     if [ ! -n "$2" ]; then
-      echo "No host argument supplied." >&2
+      echo "No host argument supplied" >&2
       exit 1
     fi
 
     ip="$(dig +short +search "$2")"
 
     if [ ! -n "$ip" ]; then
-      echo "Could not find an IP for supplied host." >&2
+      echo "Could not find an IP for supplied host" >&2
       exit 1
     fi
 
@@ -209,7 +209,7 @@ case "$1" in
 
   *) # Assumes argument is an IPv4 address
     if [ ! -n "$1" ]; then
-      echo "No arguments supplied." >&2
+      echo "No arguments supplied" >&2
       exit 1
     fi
 
