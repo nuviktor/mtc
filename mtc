@@ -202,6 +202,8 @@ case "$1" in
     echo "  count       - display a count of marked connections."
     echo "  host HOST [TIMEOUT]"
     echo "              - add an IP address to be throttled by hostname, an optional timeout (in minutes) can be specified."
+    echo "  auto [TIMEOUT]"
+    echo "              - automatically find the IP address taking the most bandwidth using mth, and add it."
     echo "  help        - display this help snippet."
   ;;
 
