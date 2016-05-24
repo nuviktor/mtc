@@ -175,17 +175,17 @@ case "$1" in
 
     interface=br-lan
 
-    if ip="$(mth "$interface")"; then
-      if [ ! -n "$2" ]; then
-        echo "Adding IP address $ip to list"
-        ipset add mtc "$ip"
-      else
-        echo "Adding IP address $ip to list with timeout of $2 minutes"
-        ipset add mtc "$ip" timeout "$(( $2 * 60 ))"
-      fi
-    else
+    if ! ip="$(mth "$interface")"; then
       echo "Problem running mth" >&2
       exit 1
+    fi
+
+    if [ ! -n "$2" ]; then
+      echo "Adding IP address $ip to list"
+      ipset add mtc "$ip"
+    else
+      echo "Adding IP address $ip to list with timeout of $2 minutes"
+      ipset add mtc "$ip" timeout "$(( $2 * 60 ))"
     fi
   ;;
 
