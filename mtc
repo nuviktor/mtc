@@ -17,14 +17,17 @@ fi
 is_installed tc || { echo "tc not installed" >&2; exit 1; }
 is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
 
+network=192.168.1.0
+maskbits=24
+interface=br-lan
 mark_value=6
+conntrack_path=/proc/net/nf_conntrack
 
 case "$1" in
   init)
     # Limits in KB/s
     download_limit="${MTC_DL_LIMIT:-347}"
     upload_limit="${MTC_UL_LIMIT:-59}"
-    network=192.168.1.0/24
 
     if mtc_is_running; then
       echo "MTC already appears to be running" >&2
@@ -74,7 +77,7 @@ case "$1" in
     # Assumes my script will be the only thing editing the fwmark
     # and POSTROUTING chains
 
-    ipset new mtc bitmap:ip range "$network" timeout 0
+    ipset new mtc bitmap:ip range "$network/$maskbits" timeout 0
 
     iptables -t mangle -F fwmark
     iptables -t mangle -A fwmark -j CONNMARK --restore-mark
@@ -119,7 +122,12 @@ case "$1" in
   ;;
 
   count)
-    echo "Connections marked: $(grep -c "mark=$mark_value" /proc/net/nf_conntrack)"
+    if [ ! -f "$conntrack_path" ]; then
+      echo "Could not find nf_conntrack file" >&2
+      exit 1
+    fi
+
+    echo "Connections marked: $(grep -c "mark=$mark_value " /proc/net/nf_conntrack)"
   ;;
 
   host)
@@ -180,9 +188,7 @@ case "$1" in
       exit 1
     fi
 
-    interface=br-lan
-
-    if ! ip="$(mth "$interface")"; then
+    if ! ip="$(mth -i "$interface" -n "$network" -m "$maskbits")"; then
       echo "Problem running mth" >&2
       exit 1
     fi
