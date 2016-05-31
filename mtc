@@ -127,7 +127,7 @@ case "$1" in
       exit 1
     fi
 
-    echo "Connections marked: $(grep -c "mark=$mark_value " /proc/net/nf_conntrack)"
+    echo "Connections marked: $(grep -c "mark=$mark_value " "$conntrack_path")"
   ;;
 
   host)
