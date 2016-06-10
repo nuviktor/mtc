@@ -16,12 +16,7 @@ mtc_is_running() {
   ipset list mtc >/dev/null 2>&1
 }
 
-if [ -d "$lock_path" ]; then
-  echo "Lock file $lock_path exists, another instance must be running; exiting without any changes" >&2
-  exit 1
-fi
-
-mkdir "$lock_path"
+mkdir "$lock_path" || { echo "Could not acquire lock, exiting without any changes" >&2; exit 1; }
 trap 'rm -r "$lock_path" 2>/dev/null' EXIT
 
 if [ "$(id -u)" != 0 ]; then
