@@ -1,10 +1,15 @@
 #!/bin/sh
 
+download_limit="${MTC_DL_LIMIT:-347}"
+upload_limit="${MTC_UL_LIMIT:-59}"
+
 network=192.168.1.0
 maskbits=24
 interface=br-lan
+
 mark_value=6
 conntrack_path=/proc/net/nf_conntrack
+
 lock_path=/tmp/mtc.lock
 
 is_installed() {
@@ -29,9 +34,6 @@ is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
 
 case "$1" in
   init)
-    # Limits in KB/s
-    download_limit="${MTC_DL_LIMIT:-347}"
-    upload_limit="${MTC_UL_LIMIT:-59}"
 
     if mtc_is_running; then
       echo "MTC already appears to be running" >&2
