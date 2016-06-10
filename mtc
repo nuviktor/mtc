@@ -38,7 +38,6 @@ is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
 
 case "$1" in
   init)
-
     if mtc_is_running; then
       echo "MTC already appears to be running" >&2
       exit 1
