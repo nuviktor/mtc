@@ -226,6 +226,7 @@ case "$1" in
     echo "              - add an IPv4 address to be throttled by hostname, an optional timeout (in minutes) can be specified."
     echo "  auto [TIMEOUT]"
     echo "              - automatically find the IPv4 address taking the most bandwidth using mth, and add it."
+    echo "  status      - print status and exit with appropriate code."
     echo "  help        - display this help snippet."
   ;;
 
