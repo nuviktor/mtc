@@ -5,6 +5,7 @@ maskbits=24
 interface=br-lan
 mark_value=6
 conntrack_path=/proc/net/nf_conntrack
+lock_path=/tmp/mtc.lock
 
 is_installed() {
   command -v "$1" >/dev/null 2>&1
@@ -14,6 +15,14 @@ mtc_is_running() {
   # The existence of the mtc ipset strongly suggests mtc has been initialised
   ipset list mtc >/dev/null 2>&1
 }
+
+if [ -d "$lock_path" ]; then
+  echo "Lock file $lock_path exists, another instance must be running; exiting without any changes" >&2
+  exit 1
+fi
+
+mkdir "$lock_path"
+trap 'rm -r "$lock_path" 2>/dev/null' EXIT
 
 if [ "$(id -u)" != 0 ]; then
   echo "Must be ran as root" >&2
