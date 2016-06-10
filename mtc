@@ -1,5 +1,11 @@
 #!/bin/sh
 
+network=192.168.1.0
+maskbits=24
+interface=br-lan
+mark_value=6
+conntrack_path=/proc/net/nf_conntrack
+
 is_installed() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -16,12 +22,6 @@ fi
 
 is_installed tc || { echo "tc not installed" >&2; exit 1; }
 is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
-
-network=192.168.1.0
-maskbits=24
-interface=br-lan
-mark_value=6
-conntrack_path=/proc/net/nf_conntrack
 
 case "$1" in
   init)
