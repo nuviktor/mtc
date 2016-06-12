@@ -21,17 +21,17 @@ mtc_is_running() {
   ipset list mtc >/dev/null 2>&1
 }
 
+if [ "$(id -u)" != 0 ]; then
+  echo "Must be ran as root" >&2
+  exit 1
+fi
+
 if ! mkdir "$lock_path"; then
   echo "Could not acquire lock, exiting without any changes" >&2
   exit 1
 fi
 
 trap 'rm -r "$lock_path"' EXIT
-
-if [ "$(id -u)" != 0 ]; then
-  echo "Must be ran as root" >&2
-  exit 1
-fi
 
 is_installed tc || { echo "tc not installed" >&2; exit 1; }
 is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
