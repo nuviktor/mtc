@@ -164,7 +164,7 @@ case "$1" in
     fi
 
     if [ ! -n "$3" ]; then
-      echo "Adding IP address $ip (resolve from host $2) to list"
+      echo "Adding IP address $ip (resolved from host $2) to list"
       ipset add mtc "$ip"
     else
       echo "Adding IP address $ip (resolved from host $2) to list with timeout of $3 minutes"
