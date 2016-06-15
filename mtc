@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# Limits in KB/s
 download_limit="${MTC_DL_LIMIT:-347}"
 upload_limit="${MTC_UL_LIMIT:-59}"
 
