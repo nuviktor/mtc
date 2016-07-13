@@ -32,7 +32,7 @@ if ! mkdir "$lock_path"; then
   exit 1
 fi
 
-trap 'rm -r "$lock_path"' EXIT
+trap 'rm -r "$lock_path" 2>/dev/null' TERM INT EXIT
 
 is_installed tc || { echo "tc not installed" >&2; exit 1; }
 is_installed ipset || { echo "ipset not installed" >&2; exit 1; }
