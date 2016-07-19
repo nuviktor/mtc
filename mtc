@@ -38,8 +38,6 @@ add_ip() {
 }
 
 add_host() {
-  local ip
-
   if ! ip="$(dig "$1" a +short +search)"; then
     echo "Problem running dig" >&2
     return 1
